@@ -223,6 +223,12 @@
     display: inline-block;
   }
 
+  .hex {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .hex span { padding-right: 4px; }
 
   /* Hover Resonance Classes */
@@ -234,7 +240,7 @@
 
   /* CLI Container */
   #cli-container {
-    margin-top: 16px;
+    margin-top: auto;
     padding: 16px;
     background: #080808;
     border-top: 2px solid var(--hex-color);
@@ -375,7 +381,7 @@
     "LOADING eBPF_HELLFIRE_HOOKS... [OK]",
     "DECRYPTING m4rba4s_SOUL.bin... [OK]",
     "SYSCALL HIJACKING COMPLETE...",
-    "WELCOME TO THE ABYSS, ILYA ⸸"
+    "WELCOME TO THE ABYSS ⸸"
   ];
   
   const boot = document.getElementById("boot-sequence");
@@ -386,7 +392,7 @@
     if (sIdx >= seq.length) {
       setTimeout(() => {
         boot.style.display = 'none';
-        document.getElementById("os").style.display = 'block';
+        document.getElementById("os").style.display = 'flex';
         document.getElementById("cli-input").focus();
         renderHex('about');
         initCLI();
@@ -415,45 +421,90 @@
   }
   
   // HEX EDITOR DATA & LORE
+  const generateDump = (text, startAddrHex) => {
+    let addr = parseInt(startAddrHex, 16);
+    let lines = text.trim().split('\n');
+    let rows = [];
+
+    lines.forEach(line => {
+      let content = line.trim();
+      if (!content) {
+        rows.push({
+          addr: addr.toString(16).padStart(8, '0').toUpperCase(),
+          hl: Array(16).fill("00"),
+          asm: "nop",
+          asc: "................"
+        });
+        addr += 16;
+        return;
+      }
+
+      let strChunks = content.match(/.{1,16}/g) || [];
+      strChunks.forEach((chunk, idx) => {
+        let hl = chunk.split('').map(c => c.charCodeAt(0).toString(16).padStart(2, '0').toUpperCase());
+        while (hl.length < 16) hl.push("00");
+        
+        let asc = chunk.replace(/[^ -~]/g, '.');
+        while (asc.length < 16) asc += ".";
+
+        let asm = "";
+        if (content.startsWith("[")) {
+            asm = idx === 0 ? content : "";
+        } else if (content.startsWith("- ")) {
+            asm = idx === 0 ? `jmp 0x${(addr + 0x20).toString(16).toUpperCase()} ; ${chunk}` : `; ${chunk}`;
+        } else if (idx === 0) {
+            asm = `db "${chunk.replace(/"/g, '\\"')}"`;
+        } else {
+            asm = `; ${chunk}`; 
+        }
+        
+        rows.push({
+          addr: addr.toString(16).padStart(8, '0').toUpperCase(),
+          hl: hl,
+          asm: asm,
+          asc: asc
+        });
+        addr += 16;
+      });
+    });
+    return rows;
+  };
+
+  const aboutText = `
+[SECTION .text] // DEMONIC_ENTITY_DUMP
+
+I am a Offensive Security Specialist and Red Team Operator. My primary focus is lateral movement, post-exploitation, and breaking down enterprise infrastructure. I don't just run standard tools - I build custom utilities, diving deep into low-level systems, eBPF, reverse engineering, and firmware.
+
+My mindset is shaped by years of military engineering and over two decades in combat sports (MMA/BJJ). The philosophy remains the same whether on the tatami or in the terminal: analyze the structure, find the vulnerability, exploit the balance, and leave no trace. If it compiles, it can be broken.
+`;
+
+  const articlesText = `
+[SECTION .data] // ARTICLES
+
+Mutable state and active research.
+This section contains my technical write-ups, vulnerability research, and thoughts on offensive security.
+
+Topics I cover:
+- APT-level tactics and evasion techniques.
+- Bypassing modern isolation (Docker, WebAssembly).
+- Kernel-space networking and eBPF exploitation.
+- Occasional reflections on cosmology, physics, and molecular biology, because the universe is just another system to reverse-engineer.
+`;
+
+  const projectsText = `
+[SECTION .rodata] // PROJECTS
+
+Immutable artifacts of execution.
+A selection of my custom architecture and offensive tooling:
+
+- Aegis-eBPF: A high-performance, low-level Linux kernel firewall project.
+- Custom Red Team Arsenal: Various undocumented utilities, payload generators, and low-level scripts designed to bypass modern EDRs and establish persistence.
+`;
+
   const dumps = {
-    about: [
-      { addr: "08048000", hl: ["DE","AD","C0","DE"], asm: "; [SECTION .text] // DEMONIC_ENTITY_DUMP", asc: "DEAD" },
-      { addr: "08048004", hl: ["6D","34","72","62"], asm: "push 'm4rb'", asc: "m4rb" },
-      { addr: "08048008", hl: ["61","34","73","00"], asm: "push 'a4s\\0'", asc: "a4s." },
-      { addr: "0804800C", hl: ["89","E5","83","EC"], asm: "mov ebp, esp ; INIT_ILYA_CORE", asc: "...." },
-      { addr: "08048010", hl: ["31","C0","40","CD"], asm: "xor eax, eax ; RED_TEAM_OP_ACTIVE", asc: "1.@" },
-      { addr: "08048014", hl: ["E8","BD","FF","FF"], asm: "call KERNEL_EXPLOIT_DEPLOY", asc: "...." },
-      { addr: "08048018", hl: ["0F","05","90","90"], asm: "syscall ; eBPF_HELLFIRE_HOOKS_LOADED", asc: "...." },
-      { addr: "0804801C", hl: ["48","83","C4","18"], asm: "add rsp, 0x18 ; MARTIAL_ARTS_STRIKE", asc: "H..." },
-      { addr: "08049000", hl: ["B1","00","D6","66"], asm: "; [SECTION .data] // WEAPONIZED_PAYLOADS & C2", asc: "...f" },
-      { addr: "08049004", hl: ["52","55","53","54"], asm: "db 'RUST', 0", asc: "RUST" },
-      { addr: "08049008", hl: ["43","2F","43","2B"], asm: "db 'C/C++', 0", asc: "C/C+" },
-      { addr: "0804900C", hl: ["65","42","50","46"], asm: "db 'eBPF', 0", asc: "eBPF" },
-      { addr: "08049010", hl: ["58","44","50","00"], asm: "db 'XDP', 0", asc: "XDP." },
-      { addr: "0804A000", hl: ["E8","A3","13","00"], asm: "CALL 0x666 ; // SUMMONING_RITUAL (CONTACT)", asc: "...." },
-      { addr: "0804A004", hl: ["47","49","54","48"], asm: "db 'GITHUB: m4rba4s', 0", asc: "GITH" },
-      { addr: "0804A008", hl: ["52","45","41","4C"], asm: "db 'REALITY: NULL', 0", asc: "REAL" }
-    ],
-    articles: [
-      { addr: "0804C000", hl: ["41","52","54","49"], asm: "; [SECTION .data] // 0DAY_RESEARCH_DUMP", asc: "ARTI" },
-      { addr: "0804C004", hl: ["4B","45","52","4E"], asm: "db 'KERNEL_BYPASS_ARCHITECTURE', 0", asc: "KERN" },
-      { addr: "0804C008", hl: ["45","4C","5F","42"], asm: "db 'EBPF_STEALTH_TECHNIQUES', 0", asc: "EL_B" },
-      { addr: "0804C00C", hl: ["59","50","41","53"], asm: "call 0x0804E100 ; READ_ARTICLE", asc: "YPAS" },
-      { addr: "0804C010", hl: ["53","5F","41","52"], asm: "db 'XDP_FIREWALL_EVASION_NOTES', 0", asc: "S_AR" },
-      { addr: "0804C014", hl: ["54","49","43","4C"], asm: "ret", asc: "TICL" },
-      { addr: "0804C018", hl: ["00","00","00","00"], asm: "nop ; NO_MORE_KNOWLEDGE_ALLOWED", asc: "...." },
-      { addr: "0804C01C", hl: ["00","00","00","00"], asm: "nop", asc: "...." }
-    ],
-    projects: [
-      { addr: "0804D000", hl: ["50","52","4F","4A"], asm: "; [SECTION .rodata] // MALWARE_AND_C2_INFRA", asc: "PROJ" },
-      { addr: "0804D004", hl: ["4D","41","4C","57"], asm: "db 'ABYSS_C2_FRAMEWORK', 0", asc: "MALW" },
-      { addr: "0804D008", hl: ["41","52","45","5F"], asm: "db 'GOLANG_RANSOM_STUB', 0", asc: "ARE_" },
-      { addr: "0804D00C", hl: ["50","41","59","4C"], asm: "db 'LINUX_ROOTKIT_V3', 0", asc: "PAYL" },
-      { addr: "0804D010", hl: ["4F","41","44","53"], asm: "db 'OFFENSIVE_RUST_TOOLS', 0", asc: "OADS" },
-      { addr: "0804D014", hl: ["E8","13","37","00"], asm: "call KERNEL_PANIC_INIT", asc: "...." },
-      { addr: "0804D018", hl: ["00","00","00","00"], asm: "hlt", asc: "...." },
-      { addr: "0804D01C", hl: ["00","00","00","00"], asm: "hlt", asc: "...." }
-    ]
+    about: generateDump(aboutText, "08048000"),
+    articles: generateDump(articlesText, "0804C000"),
+    projects: generateDump(projectsText, "0804D000")
   };
 
   const grid = document.getElementById("hexGrid");
@@ -543,7 +594,7 @@
         appendLog(`<span class="prompt">root@baphomet</span><span class="prompt-separator">:</span><span class="prompt-dir">~#</span> <span style="color:#FFF">${val}</span>`);
         
         if (val === 'whoami') {
-          appendLog('m4rba4s | ILYA<br/>- RED TEAM OPERATOR<br/>- KERNEL EXPLOIT / eBPF ARCHITECT<br/>- MARTIAL ARTIST ⸸');
+          appendLog('m4rba4s  or 0utspoken<br/>- RED TEAM OPERATOR<br/>- KERNEL EXPLOIT / eBPF ARCHITECT<br/>- MARTIAL ARTIST ⸸ Illustrator');
         } else if (val === 'help') {
           appendLog('AVAILABLE BINARIES: whoami, execute_order_666, clear, sigkill');
         } else if (val === 'execute_order_666') {
