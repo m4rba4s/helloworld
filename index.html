@@ -581,6 +581,12 @@ A selection of my custom architecture and offensive tooling:
   }
 
   // CLI LOGIC
+  function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
   function initCLI() {
     const cliInput = document.getElementById('cli-input');
     const cliOutput = document.getElementById('cli-output');
@@ -590,8 +596,9 @@ A selection of my custom architecture and offensive tooling:
     cliInput.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') {
         const val = this.value.trim().toLowerCase();
+        const escapedVal = escapeHTML(val);
         this.value = '';
-        appendLog(`<span class="prompt">root@baphomet</span><span class="prompt-separator">:</span><span class="prompt-dir">~#</span> <span style="color:#FFF">${val}</span>`);
+        appendLog(`<span class="prompt">root@baphomet</span><span class="prompt-separator">:</span><span class="prompt-dir">~#</span> <span style="color:#FFF">${escapedVal}</span>`);
         
         if (val === 'whoami') {
           appendLog('m4rba4s  or 0utspoken<br/>- RED TEAM OPERATOR<br/>- KERNEL EXPLOIT / eBPF ARCHITECT<br/>- MARTIAL ARTIST ⸸ Illustrator');
