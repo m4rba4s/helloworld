@@ -623,7 +623,7 @@ A selection of my custom architecture and offensive tooling:
         } else if (val === 'sigkill') {
           document.body.innerHTML = '<div style="color:#FF003C; font-size: 24px; padding: 50px;">KERNEL PANIC - NOT SYNCING: FATAL SIGNAL 9<br/>m4rba4s_SOUL.bin CORRUPTED.</div>';
         } else if (val !== '') {
-          appendLog(`bash: ${val}: command not found. You lack the privileges.`);
+          appendLog(`bash: ${escapedVal}: command not found. You lack the privileges.`);
         }
         
         window.scrollTo(0, document.body.scrollHeight);
